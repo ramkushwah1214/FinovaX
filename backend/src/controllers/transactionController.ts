@@ -88,8 +88,14 @@ export async function getTransactions(req: AuthenticatedRequest, res: Response, 
     const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 20));
     const skip = (pageNum - 1) * limitNum;
 
+    // Use lean() with explicit projection to avoid loading heavy unneeded fields into memory
     const [transactions, total] = await Promise.all([
-      Transaction.find(query).sort(sortOptions).skip(skip).limit(limitNum).lean(),
+      Transaction.find(query)
+        .select('_id title amount type category date paymentMethod description createdAt')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
       Transaction.countDocuments(query)
     ]);
 
@@ -229,7 +235,8 @@ export async function createTransaction(req: AuthenticatedRequest, res: Response
       }
 
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const [catCount, vel24h, prevCategoryHistory, prevMerchantHistory] = await Promise.all([
+      // Fast existence checks using findOne().select('_id') instead of full unbounded countDocuments()
+      const [catCount, vel24h, prevCategoryDoc, prevMerchantDoc] = await Promise.all([
         Transaction.countDocuments({
           userId,
           category: category.trim(),
@@ -239,21 +246,21 @@ export async function createTransaction(req: AuthenticatedRequest, res: Response
           userId,
           date: { $gte: oneDayAgo }
         }),
-        Transaction.countDocuments({
+        Transaction.findOne({
           userId,
           category: category.trim(),
           _id: { $ne: newTx._id }
-        }),
-        Transaction.countDocuments({
+        }).select('_id').lean(),
+        Transaction.findOne({
           userId,
           title: title.trim(),
           _id: { $ne: newTx._id }
-        })
+        }).select('_id').lean()
       ]);
       recentCategoryCount = catCount;
       const velocity24h = vel24h;
-      const isNewCategory = userStats.count >= 5 && prevCategoryHistory === 0;
-      const isNewMerchant = userStats.count >= 5 && prevMerchantHistory === 0;
+      const isNewCategory = userStats.count >= 5 && !prevCategoryDoc;
+      const isNewMerchant = userStats.count >= 5 && !prevMerchantDoc;
       const hourOfDay = new Date().getHours();
 
       // Call FastAPI AI service with timeout guard (zero-crash guarantee)
@@ -406,21 +413,21 @@ export async function analyzeTransactionRisk(req: AuthenticatedRequest, res: Res
     const txDate = tx.date ? new Date(tx.date) : new Date();
     const oneDayAgo = new Date(txDate.getTime() - 24 * 60 * 60 * 1000);
 
-    const [velocity24h, prevCatCount, prevMerchantCount] = await Promise.all([
+    const [velocity24h, prevCatDoc, prevMerchantDoc] = await Promise.all([
       Transaction.countDocuments({
         userId,
         date: { $gte: oneDayAgo, $lte: txDate }
       }),
-      Transaction.countDocuments({
+      Transaction.findOne({
         userId,
         category: tx.category,
         date: { $lt: txDate }
-      }),
-      Transaction.countDocuments({
+      }).select('_id').lean(),
+      Transaction.findOne({
         userId,
         title: tx.title,
         date: { $lt: txDate }
-      })
+      }).select('_id').lean()
     ]);
 
     const assessment = await evaluateTransactionRisk({
@@ -433,8 +440,8 @@ export async function analyzeTransactionRisk(req: AuthenticatedRequest, res: Res
       user_std_amount: userStats.stdDev,
       user_tx_count: userStats.count,
       velocity_24h_count: velocity24h,
-      is_new_category: userStats.count >= 5 && prevCatCount === 0,
-      is_new_merchant: userStats.count >= 5 && prevMerchantCount === 0,
+      is_new_category: userStats.count >= 5 && !prevCatDoc,
+      is_new_merchant: userStats.count >= 5 && !prevMerchantDoc,
       hour_of_day: txDate.getHours()
     });
 

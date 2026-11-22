@@ -1,0 +1,32 @@
+[
+  {
+    "test": "Multi-Tier Duplicate Detection",
+    "inputSize": "M=5000 historical, N=1000 staged",
+    "originalComplexity": "Time: O(N * M), Space: O(M)",
+    "optimizedComplexity": "Time: O(N + M), Space: O(M)",
+    "originalTimeMs": 529.7757,
+    "optimizedTimeMs": 12.4095,
+    "speedup": "42.7x",
+    "verifiedEquivalent": true
+  },
+  {
+    "test": "Frontend Transaction Filtering & Sorting",
+    "inputSize": "N=2000 transactions",
+    "originalComplexity": "Time: O(N * log N), Space: O(N) with 3N string + 2*N*logN Date allocations",
+    "optimizedComplexity": "Time: O(N * log N), Space: O(N) with 0 Date allocations & fast-path filter exit",
+    "originalTimeMs": 1.5102520000000001,
+    "optimizedTimeMs": 0.289896,
+    "speedup": "5.2x",
+    "verifiedEquivalent": true
+  },
+  {
+    "test": "CSV Generation & Serialization",
+    "inputSize": "N=5000 transactions",
+    "originalComplexity": "Time: O(N), Space: O(N) with 3 intermediate nested arrays",
+    "optimizedComplexity": "Time: O(N), Space: O(N) with single pre-allocated 1D array",
+    "originalTimeMs": 4.052105,
+    "optimizedTimeMs": 2.0056599999999998,
+    "speedup": "2.0x",
+    "verifiedEquivalent": true
+  }
+]

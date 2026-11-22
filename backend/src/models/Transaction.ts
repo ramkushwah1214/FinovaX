@@ -95,8 +95,7 @@ const TransactionSchema = new Schema<ITransaction>(
         values: ['income', 'expense'],
         message: 'Transaction type must be either income or expense'
       },
-      required: [true, 'Transaction type is required'],
-      index: true
+      required: [true, 'Transaction type is required']
     },
     direction: {
       type: String,
@@ -115,8 +114,7 @@ const TransactionSchema = new Schema<ITransaction>(
     category: {
       type: String,
       required: [true, 'Transaction category is required'],
-      trim: true,
-      index: true
+      trim: true
     },
     subcategory: {
       type: String,
@@ -126,8 +124,7 @@ const TransactionSchema = new Schema<ITransaction>(
     date: {
       type: Date,
       required: [true, 'Transaction date is required'],
-      default: Date.now,
-      index: true
+      default: Date.now
     },
     paymentMethod: {
       type: String,
@@ -138,8 +135,7 @@ const TransactionSchema = new Schema<ITransaction>(
     referenceId: {
       type: String,
       trim: true,
-      default: '',
-      index: true
+      default: ''
     },
     balance: {
       type: Number,
@@ -148,8 +144,7 @@ const TransactionSchema = new Schema<ITransaction>(
     importBatchId: {
       type: Schema.Types.ObjectId,
       ref: 'StatementImport',
-      required: false,
-      index: true
+      required: false
     },
     categorizationStatus: {
       type: String,
@@ -201,6 +196,7 @@ const TransactionSchema = new Schema<ITransaction>(
 TransactionSchema.index({ userId: 1, date: -1 });
 TransactionSchema.index({ userId: 1, type: 1, date: -1 });
 TransactionSchema.index({ userId: 1, category: 1 });
+TransactionSchema.index({ userId: 1, type: 1, category: 1, date: -1 });
 TransactionSchema.index({ userId: 1, referenceId: 1 });
 TransactionSchema.index({ userId: 1, importBatchId: 1 });
 TransactionSchema.index({ userId: 1, duplicateStatus: 1 });

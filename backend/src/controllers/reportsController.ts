@@ -45,23 +45,24 @@ export async function getReportSummary(req: AuthenticatedRequest, res: Response,
       matchQuery.date = { $gte: startDate, $lte: endDate };
     }
 
-    const [sums, count] = await Promise.all([
-      Transaction.aggregate([
-        { $match: matchQuery },
-        {
-          $group: {
-            _id: '$type',
-            total: { $sum: '$amount' }
-          }
+    // Single-pass aggregation computing totals and transaction counts in one database scan: O(K)
+    const sums = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$type',
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
         }
-      ]),
-      Transaction.countDocuments(matchQuery)
+      }
     ]);
 
     let grossInflow = 0;
     let grossOutflow = 0;
+    let totalCount = 0;
 
     sums.forEach(item => {
+      totalCount += item.count || 0;
       if (item._id === 'income') grossInflow = item.total;
       if (item._id === 'expense') grossOutflow = item.total;
     });
@@ -80,7 +81,7 @@ export async function getReportSummary(req: AuthenticatedRequest, res: Response,
           grossOutflow,
           netSavings,
           savingsRate,
-          transactionCount: count,
+          transactionCount: totalCount,
           range,
           startDate: startDate ? startDate.toISOString().split('T')[0] : null,
           endDate: endDate.toISOString().split('T')[0]

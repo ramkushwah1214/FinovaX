@@ -64,17 +64,22 @@ export async function stageStatement(params: StageStatementParams) {
     );
   }
 
-  // 3. Normalization & AI/Rule-based Categorization
-  const stagedInitial: IStagedTransaction[] = [];
-  for (let i = 0; i < parserResult.records.length; i++) {
-    const raw = parserResult.records[i];
-    const catOutcome = await categorizeTransactionSmart(raw.description, raw.amount, raw.direction);
-    const staged = normalizeRawRecord(raw, i, catOutcome, {
-      source,
-      defaultCurrency,
-      defaultPaymentMethod: source === 'gpay' ? 'Google Pay (UPI)' : 'Bank Statement Import'
-    });
-    stagedInitial.push(staged);
+  // 3. Normalization & AI/Rule-based Categorization (Concurrent batching in controlled chunks of 20)
+  const stagedInitial: IStagedTransaction[] = new Array(parserResult.records.length);
+  const CHUNK_SIZE = 20;
+  for (let c = 0; c < parserResult.records.length; c += CHUNK_SIZE) {
+    const chunk = parserResult.records.slice(c, c + CHUNK_SIZE);
+    await Promise.all(
+      chunk.map(async (raw, idx) => {
+        const i = c + idx;
+        const catOutcome = await categorizeTransactionSmart(raw.description, raw.amount, raw.direction);
+        stagedInitial[i] = normalizeRawRecord(raw, i, catOutcome, {
+          source,
+          defaultCurrency,
+          defaultPaymentMethod: source === 'gpay' ? 'Google Pay (UPI)' : 'Bank Statement Import'
+        });
+      })
+    );
   }
 
   // 4. Multi-tier Duplicate Detection

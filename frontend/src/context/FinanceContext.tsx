@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Transaction,
   Budget,
@@ -204,8 +204,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const pendingBillsCount = summary.pendingBillsCount;
   const unresolvedFraudCount = summary.unresolvedFraudCount;
 
-  // Actions
-  const addTransaction = async (txData: Omit<Transaction, 'id' | '_id'>) => {
+  // Memoized Actions to preserve referential stability and prevent cascading component re-renders
+  const addTransaction = useCallback(async (txData: Omit<Transaction, 'id' | '_id'>) => {
     try {
       setError(null);
       await api.transactions.create(txData);
@@ -214,9 +214,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to save transaction');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransaction = useCallback(async (id: string) => {
     try {
       setError(null);
       await api.transactions.delete(id);
@@ -225,9 +225,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to delete transaction');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const addBudget = async (budgetData: { category: string; limitAmount: number; month?: number; year?: number }) => {
+  const addBudget = useCallback(async (budgetData: { category: string; limitAmount: number; month?: number; year?: number }) => {
     try {
       setError(null);
       await api.budgets.create(budgetData);
@@ -236,9 +236,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to create budget');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const deleteBudget = async (id: string) => {
+  const deleteBudget = useCallback(async (id: string) => {
     try {
       setError(null);
       await api.budgets.delete(id);
@@ -247,9 +247,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to delete budget');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const addGoal = async (goalData: { title: string; targetAmount: number; currentAmount?: number; targetDate: string; category?: string }) => {
+  const addGoal = useCallback(async (goalData: { title: string; targetAmount: number; currentAmount?: number; targetDate: string; category?: string }) => {
     try {
       setError(null);
       await api.goals.create(goalData);
@@ -258,9 +258,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to create goal');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const contributeToGoal = async (id: string, amount: number) => {
+  const contributeToGoal = useCallback(async (id: string, amount: number) => {
     try {
       setError(null);
       await api.goals.contribute(id, amount);
@@ -269,9 +269,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to contribute to goal');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const deleteGoal = async (id: string) => {
+  const deleteGoal = useCallback(async (id: string) => {
     try {
       setError(null);
       await api.goals.delete(id);
@@ -280,9 +280,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to delete goal');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const addBill = async (billData: { title: string; amount: number; category: string; frequency?: string; dueDate: string; provider?: string; autoDebit?: boolean }) => {
+  const addBill = useCallback(async (billData: { title: string; amount: number; category: string; frequency?: string; dueDate: string; provider?: string; autoDebit?: boolean }) => {
     try {
       setError(null);
       await api.recurringPayments.create({
@@ -299,9 +299,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to create recurring obligation');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const updateBillStatus = async (id: string, status: BillStatus) => {
+  const updateBillStatus = useCallback(async (id: string, status: BillStatus) => {
     try {
       setError(null);
       await api.recurringPayments.update(id, { status });
@@ -310,9 +310,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to update bill status');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const resolveFraudAlert = async (id: string, resolution: AlertResolution) => {
+  const resolveFraudAlert = useCallback(async (id: string, resolution: AlertResolution) => {
     try {
       setError(null);
       await api.fraudAlerts.updateStatus(id, resolution);
@@ -321,9 +321,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to resolve fraud alert');
       throw err;
     }
-  };
+  }, [refreshData]);
 
-  const updateUserProfile = async (profileUpdate: Partial<UserProfile>) => {
+  const updateUserProfile = useCallback(async (profileUpdate: Partial<UserProfile>) => {
     try {
       setError(null);
       await authUpdateProfile(profileUpdate);
@@ -331,7 +331,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err.message || 'Failed to update profile');
       throw err;
     }
-  };
+  }, [authUpdateProfile]);
 
   // State-aware Assistant reasoning against actual MongoDB data
   const sendChatMessage = (userQuestion: string) => {
@@ -407,44 +407,77 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, 400);
   };
 
+  const contextValue = useMemo<FinanceContextType>(() => ({
+    transactions,
+    budgets,
+    goals,
+    bills,
+    fraudAlerts,
+    userProfile,
+    summary,
+    cashFlow,
+    expensesByCategory,
+    chatMessages,
+    isLoading,
+    error,
+    isDbUnavailable,
+    isAiThinking,
+    totalIncome,
+    totalExpenses,
+    netBalance,
+    savingsRate,
+    pendingBillsCount,
+    unresolvedFraudCount,
+    refreshData,
+    addTransaction,
+    deleteTransaction,
+    addBudget,
+    deleteBudget,
+    addGoal,
+    contributeToGoal,
+    deleteGoal,
+    addBill,
+    updateBillStatus,
+    resolveFraudAlert,
+    sendChatMessage,
+    updateUserProfile
+  }), [
+    transactions,
+    budgets,
+    goals,
+    bills,
+    fraudAlerts,
+    userProfile,
+    summary,
+    cashFlow,
+    expensesByCategory,
+    chatMessages,
+    isLoading,
+    error,
+    isDbUnavailable,
+    isAiThinking,
+    totalIncome,
+    totalExpenses,
+    netBalance,
+    savingsRate,
+    pendingBillsCount,
+    unresolvedFraudCount,
+    refreshData,
+    addTransaction,
+    deleteTransaction,
+    addBudget,
+    deleteBudget,
+    addGoal,
+    contributeToGoal,
+    deleteGoal,
+    addBill,
+    updateBillStatus,
+    resolveFraudAlert,
+    updateUserProfile
+  ]);
+
   return (
-    <FinanceContext.Provider
-      value={{
-        transactions,
-        budgets,
-        goals,
-        bills,
-        fraudAlerts,
-        userProfile,
-        summary,
-        cashFlow,
-        expensesByCategory,
-        chatMessages,
-        isLoading,
-        error,
-        isDbUnavailable,
-        isAiThinking,
-        totalIncome,
-        totalExpenses,
-        netBalance,
-        savingsRate,
-        pendingBillsCount,
-        unresolvedFraudCount,
-        refreshData,
-        addTransaction,
-        deleteTransaction,
-        addBudget,
-        deleteBudget,
-        addGoal,
-        contributeToGoal,
-        deleteGoal,
-        addBill,
-        updateBillStatus,
-        resolveFraudAlert,
-        sendChatMessage,
-        updateUserProfile
-      }}
-    >
+    <FinanceContext.Provider value={contextValue}>
       {children}
     </FinanceContext.Provider>
   );

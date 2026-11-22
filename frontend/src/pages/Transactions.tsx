@@ -67,27 +67,29 @@ export const Transactions: React.FC = () => {
     return ['all', ...Array.from(set)];
   }, [transactions]);
 
-  // Filtered & Sorted Transactions
+  // Filtered & Sorted Transactions (Optimized: O(1) single lowercase + fast-path type/cat check + zero Date allocs)
   const filteredTransactions = useMemo(() => {
+    const searchLower = searchTerm.trim().toLowerCase();
+
     return transactions
       .filter((t) => {
-        // Search filter
-        const matchesSearch =
-          (t.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (t.category || '').toLowerCase().includes(searchTerm.toLowerCase());
+        // Fast-path type filter
+        if (selectedType !== 'all' && t.type !== selectedType) return false;
 
-        // Type filter
-        const matchesType = selectedType === 'all' || t.type === selectedType;
+        // Fast-path category filter
+        if (selectedCategory !== 'all' && t.category !== selectedCategory) return false;
 
-        // Category filter
-        const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-
-        return matchesSearch && matchesType && matchesCategory;
+        // Search filter with pre-lowercased query
+        if (!searchLower) return true;
+        return (
+          (t.title && t.title.toLowerCase().includes(searchLower)) ||
+          (t.description && t.description.toLowerCase().includes(searchLower)) ||
+          (t.category && t.category.toLowerCase().includes(searchLower))
+        );
       })
       .sort((a, b) => {
-        if (sortBy === 'date-desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
-        if (sortBy === 'date-asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (sortBy === 'date-desc') return b.date > a.date ? 1 : b.date < a.date ? -1 : 0;
+        if (sortBy === 'date-asc') return a.date > b.date ? 1 : a.date < b.date ? -1 : 0;
         if (sortBy === 'amount-desc') return b.amount - a.amount;
         if (sortBy === 'amount-asc') return a.amount - b.amount;
         return 0;

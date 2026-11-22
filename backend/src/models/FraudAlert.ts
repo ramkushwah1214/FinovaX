@@ -21,8 +21,7 @@ const FraudAlertSchema = new Schema<IFraudAlert>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
-      index: true
+      required: [true, 'User ID is required']
     },
     transactionId: {
       type: Schema.Types.ObjectId,

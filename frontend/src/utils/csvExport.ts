@@ -9,20 +9,19 @@ export function exportTransactionsToCSV(transactions: Transaction[], filename: s
     return;
   }
 
-  const headers = ['ID', 'Date', 'Title', 'Type', 'Category', 'Amount', 'Payment Method', 'Description'];
-  
-  const rows = transactions.map(t => [
-    `"${t.id || (t as any)._id}"`,
-    `"${t.date}"`,
-    `"${t.title.replace(/"/g, '""')}"`,
-    `"${t.type}"`,
-    `"${t.category}"`,
-    t.amount,
-    `"${t.paymentMethod}"`,
-    `"${(t.description || '').replace(/"/g, '""')}"`
-  ]);
+  // Pre-allocated single-pass array builder: O(N) time & linear space without intermediate 2D arrays
+  const lines = new Array(transactions.length + 1);
+  lines[0] = 'ID,Date,Title,Type,Category,Amount,Payment Method,Description';
 
-  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  for (let i = 0; i < transactions.length; i++) {
+    const t = transactions[i];
+    const id = t.id || (t as any)._id || '';
+    const title = (t.title || '').replace(/"/g, '""');
+    const desc = (t.description || '').replace(/"/g, '""');
+    lines[i + 1] = `"${id}","${t.date}","${title}","${t.type}","${t.category}",${t.amount},"${t.paymentMethod}","${desc}"`;
+  }
+
+  const csvContent = lines.join('\r\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   

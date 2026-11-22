@@ -19,6 +19,27 @@ export async function detectDuplicatesMultiTier(
     .select('_id date amount direction referenceId merchant title importBatchId')
     .lean();
 
+  // Pre-index historical ledger records into high-performance hash maps: O(M) time & space
+  // Replaces O(N * M) repeated linear scans with O(1) hash table lookups
+  const historicalRefMap = new Map<string, string>(); // ref -> dbId
+  const historicalFuzzyMap = new Map<string, string>(); // fuzzyKey -> dbId
+
+  for (let idx = 0; idx < historical.length; idx++) {
+    const h = historical[idx];
+    if (h.referenceId) {
+      const cleanRef = h.referenceId.trim().toLowerCase();
+      if (cleanRef.length >= 6 && !historicalRefMap.has(cleanRef)) {
+        historicalRefMap.set(cleanRef, h._id.toString());
+      }
+    }
+    const hDateStr = new Date(h.date).toISOString().split('T')[0];
+    const hDir = h.direction || (h.type === 'income' ? 'credit' : 'debit');
+    const hFuzzyKey = `${hDateStr}_${h.amount.toFixed(2)}_${hDir}`;
+    if (!historicalFuzzyMap.has(hFuzzyKey)) {
+      historicalFuzzyMap.set(hFuzzyKey, h._id.toString());
+    }
+  }
+
   let duplicateCount = 0;
 
   // Track seen items within this batch for intra-batch duplicate detection
@@ -35,32 +56,23 @@ export async function detectDuplicatesMultiTier(
     const itemDateStr = new Date(item.date).toISOString().split('T')[0];
     const fuzzyKey = `${itemDateStr}_${item.amount.toFixed(2)}_${item.direction}`;
 
-    // --- TIER 1: Exact Reference ID / UTR against MongoDB Historical Ledger ---
+    // --- TIER 1: Exact Reference ID / UTR against MongoDB Historical Ledger (O(1) Map Lookup) ---
     if (ref && ref.length >= 6) {
-      const dbMatch = historical.find(
-        h => h.referenceId && h.referenceId.trim().toLowerCase() === ref
-      );
-      if (dbMatch) {
+      const matchDbId = historicalRefMap.get(ref);
+      if (matchDbId) {
         isDup = true;
         reason = `Exact Reference ID match (${item.referenceId}) with existing ledger record`;
-        existingId = dbMatch._id.toString();
+        existingId = matchDbId;
       }
     }
 
-    // --- TIER 2: Same-day + Same-amount + Same-direction against MongoDB Historical Ledger ---
+    // --- TIER 2: Same-day + Same-amount + Same-direction against Historical Ledger (O(1) Map Lookup) ---
     if (!isDup) {
-      const dbFuzzyMatch = historical.find(h => {
-        const hDateStr = new Date(h.date).toISOString().split('T')[0];
-        const sameDate = hDateStr === itemDateStr;
-        const sameAmount = Math.abs(h.amount - item.amount) < 0.01;
-        const sameDir = (h.direction || (h.type === 'income' ? 'credit' : 'debit')) === item.direction;
-        return sameDate && sameAmount && sameDir;
-      });
-
-      if (dbFuzzyMatch) {
+      const matchDbId = historicalFuzzyMap.get(fuzzyKey);
+      if (matchDbId) {
         isDup = true;
         reason = `Matched on identical date (${itemDateStr}), amount (₹${item.amount}), and direction (${item.direction}) in your ledger`;
-        existingId = dbFuzzyMatch._id.toString();
+        existingId = matchDbId;
       }
     }
 

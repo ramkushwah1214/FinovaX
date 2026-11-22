@@ -154,7 +154,13 @@ export async function getDashboardCashFlow(req: AuthenticatedRequest, res: Respo
       }
     ]);
 
-    // Build timeline of last 6 months with real sums
+    // Pre-index aggregation results into a Map for O(1) month lookups instead of nested iterations: O(K)
+    const flowMap = new Map<string, number>();
+    aggResults.forEach(item => {
+      flowMap.set(`${item._id.year}-${item._id.month}-${item._id.type}`, item.total);
+    });
+
+    // Build timeline of last 6 months with real sums in O(monthsBack)
     const cashFlowData: Array<{ month: string; income: number; expenses: number; net: number }> = [];
 
     for (let i = monthsBack - 1; i >= 0; i--) {
@@ -163,15 +169,8 @@ export async function getDashboardCashFlow(req: AuthenticatedRequest, res: Respo
       const m = d.getMonth() + 1; // 1-12
       const monthLabel = d.toLocaleString('en-US', { month: 'short' });
 
-      let inc = 0;
-      let exp = 0;
-
-      aggResults.forEach(item => {
-        if (item._id.year === y && item._id.month === m) {
-          if (item._id.type === 'income') inc = item.total;
-          if (item._id.type === 'expense') exp = item.total;
-        }
-      });
+      const inc = flowMap.get(`${y}-${m}-income`) || 0;
+      const exp = flowMap.get(`${y}-${m}-expense`) || 0;
 
       cashFlowData.push({
         month: monthLabel,
@@ -256,6 +255,7 @@ export async function getDashboardRecentTransactions(req: AuthenticatedRequest, 
     const userId = req.user?.id;
 
     const transactions = await Transaction.find({ userId })
+      .select('_id title amount type category date paymentMethod description createdAt')
       .sort({ date: -1, _id: -1 })
       .limit(5)
       .lean();
