@@ -1,0 +1,48 @@
+{
+  "task": "Spending Forecasting",
+  "primary_model": "PreviousPeriodBaseline",
+  "deployed_model": "PreviousPeriodBaseline (lag_1 with adaptive drift)",
+  "empirical_selection_rationale": "Validation metrics prove PreviousPeriodBaseline (MAE \u20b92,393.55) outperforms XGBoost (MAE \u20b94,803.30) by 50.2%. Decision tree regressors cannot extrapolate trend outside training range on small sample sizes (N=24).",
+  "horizon_tested": "3-12 months chronological evaluation",
+  "split_strategy": "Strict Chronological Split (No data leakage, zero lookahead bias)",
+  "feature_schema": [
+    "lag_1",
+    "lag_2",
+    "rolling_3_mean",
+    "seasonal_month"
+  ],
+  "minimum_history_required": "3 consecutive months",
+  "mape_applicability_note": "MAPE is valid when all actual monthly values are strictly positive. In periods with zero expenses, MAPE is mathematically undefined.",
+  "models_evaluated": {
+    "PreviousPeriodBaseline": {
+      "mae": 2393.55,
+      "rmse": 3073.46,
+      "r2_score": -0.1309,
+      "mape_percent": 5.17,
+      "role": "Na\u00efve Persistence Baseline (lag_1)",
+      "training_time_sec": 0.0
+    },
+    "XGBRegressor": {
+      "mae": 4803.3,
+      "rmse": 5362.25,
+      "r2_score": -2.4424,
+      "mape_percent": 9.92,
+      "training_time_sec": 1.759
+    },
+    "RandomForestRegressor": {
+      "mae": 4655.46,
+      "rmse": 5080.25,
+      "r2_score": -2.0899,
+      "mape_percent": 9.6,
+      "training_time_sec": 0.048
+    },
+    "LinearRegression": {
+      "mae": 3619.49,
+      "rmse": 4029.07,
+      "r2_score": -0.9435,
+      "mape_percent": 7.46,
+      "training_time_sec": 0.001
+    }
+  },
+  "timestamp": "2026-11-19 22:34:19"
+}

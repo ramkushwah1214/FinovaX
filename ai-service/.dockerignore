@@ -1,0 +1,31 @@
+# FinovaX AI Microservice Docker Ignore
+venv
+.venv
+env
+ENV
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.vscode
+.idea
+*.log
+.pytest_cache
+
+# Raw training benchmark datasets (~644 MB, inference models are pre-trained in models/)
+data/raw
+data/processed
+
+# Preserve trained models, reports, and active learning corrections
+!models
+!models/**
+!reports
+!reports/**
+!data/corrections
+!data/corrections/**
+

@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Python Virtual Environments & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Build outputs
+frontend/dist/
+backend/dist/
+dist/
+
+# Environment files & Secrets
+.env
+**/.env
+backend/.env
+frontend/.env
+ai-service/.env
+*.local
+.env.*.local
+*.pem
+*.key
+*.cert
+credentials*.json
+serviceAccount*.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Large Machine Learning Datasets (>100MB)
+ai-service/data/raw/*.csv
+ai-service/data/processed/*.csv
+*.csv.gz
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

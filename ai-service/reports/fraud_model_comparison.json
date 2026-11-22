@@ -1,0 +1,254 @@
+{
+  "task": "Fraud & Anomaly Intelligence",
+  "primary_model": "IsolationForest (Unsupervised Statistical Anomaly Detection)",
+  "timestamp": "2026-11-19 21:30:34",
+  "domain_distinction_notice": "Credit card PCA features (V1-V28) and PaySim mobile money transfer features belong to separate financial domains. Neither dataset mirrors domestic Indian UPI rails directly (e.g. VPA addresses, NPCI settlement batches). FinovaX treats anomaly scores strictly as statistical variance measures to flag suspicious risk factors, distinguishing unsupervised anomaly detection from supervised fraud classification.",
+  "credit_card_experiment": {
+    "dataset": "Kaggle European Credit Card Fraud Benchmark",
+    "domain": "Credit Card In-Store & Online PCA Transactions (V1-V28)",
+    "dataset_rows": 284807,
+    "training_sample": 50492,
+    "test_sample_size": 7574,
+    "fraud_cases_in_test": 74,
+    "models_compared": {
+      "IsolationForest": {
+        "model_type": "Unsupervised Anomaly Detector",
+        "training_time_sec": 1.17,
+        "validation_selected_threshold": 0.5917,
+        "precision": 0.4245,
+        "recall": 0.6081,
+        "f1_score": 0.5,
+        "roc_auc": 0.9469,
+        "pr_auc": 0.402,
+        "false_positive_rate": 0.0081,
+        "confusion_matrix": [
+          [
+            7439,
+            61
+          ],
+          [
+            29,
+            45
+          ]
+        ],
+        "role": "Primary Anomaly Detection Engine (Unsupervised)"
+      },
+      "LocalOutlierFactor": {
+        "model_type": "Density-Based Anomaly Detector (Unsupervised)",
+        "training_time_sec": 0.73,
+        "precision": 0.3944,
+        "recall": 0.7568,
+        "f1_score": 0.5185,
+        "roc_auc": 0.9181,
+        "pr_auc": 0.6462,
+        "false_positive_rate": 0.0115,
+        "confusion_matrix": [
+          [
+            7414,
+            86
+          ],
+          [
+            18,
+            56
+          ]
+        ],
+        "role": "Alternative Unsupervised Anomaly Benchmark"
+      },
+      "RandomForest": {
+        "model_type": "Supervised Balanced Random Forest",
+        "training_time_sec": 1.31,
+        "precision": 0.9531,
+        "recall": 0.8243,
+        "f1_score": 0.8841,
+        "roc_auc": 0.9734,
+        "pr_auc": 0.9026,
+        "false_positive_rate": 0.0004,
+        "confusion_matrix": [
+          [
+            7497,
+            3
+          ],
+          [
+            13,
+            61
+          ]
+        ],
+        "role": "Supervised Benchmark Classifier"
+      },
+      "XGBoost": {
+        "model_type": "Supervised Gradient Boosted Decision Trees",
+        "training_time_sec": 1.77,
+        "precision": 0.9231,
+        "recall": 0.8108,
+        "f1_score": 0.8633,
+        "roc_auc": 0.9759,
+        "pr_auc": 0.8992,
+        "false_positive_rate": 0.0007,
+        "confusion_matrix": [
+          [
+            7495,
+            5
+          ],
+          [
+            14,
+            60
+          ]
+        ],
+        "role": "Advanced Supervised Comparison"
+      }
+    }
+  },
+  "paysim_chunked_experiment": {
+    "dataset": "PaySim Synthetic Mobile Money Dataset",
+    "domain": "Mobile Money Transfer & Cash-Out Ledger",
+    "total_rows_streamed": 6362620,
+    "sample_analyzed": 47213,
+    "frauds_detected_in_stream": 8213,
+    "features_used": [
+      "step",
+      "amount",
+      "oldbalanceOrg",
+      "newbalanceOrig",
+      "oldbalanceDest",
+      "newbalanceDest",
+      "type_CASH_OUT",
+      "type_DEBIT",
+      "type_PAYMENT",
+      "type_TRANSFER",
+      "errorBalanceOrig",
+      "errorBalanceDest"
+    ],
+    "excluded_features": [
+      "isFlaggedFraud (leakage)",
+      "nameOrig (identifier)",
+      "nameDest (identifier)"
+    ],
+    "models_compared": {
+      "IsolationForest_PaySim": {
+        "model_type": "Unsupervised Anomaly Detector on Mobile Money Flows",
+        "precision": 0.4091,
+        "recall": 0.0044,
+        "f1_score": 0.0087,
+        "roc_auc": 0.8516,
+        "pr_auc": 0.5157,
+        "false_positive_rate": 0.0013,
+        "confusion_matrix": [
+          [
+            9738,
+            13
+          ],
+          [
+            2044,
+            9
+          ]
+        ]
+      },
+      "RandomForest_PaySim": {
+        "model_type": "Supervised Mobile Money Flow Classifier",
+        "precision": 1.0,
+        "recall": 0.9961,
+        "f1_score": 0.998,
+        "roc_auc": 0.9998,
+        "pr_auc": 0.9995,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": [
+          [
+            9751,
+            0
+          ],
+          [
+            8,
+            2045
+          ]
+        ]
+      }
+    }
+  },
+  "models_compared": {
+    "IsolationForest": {
+      "model_type": "Unsupervised Anomaly Detector",
+      "training_time_sec": 1.17,
+      "validation_selected_threshold": 0.5917,
+      "precision": 0.4245,
+      "recall": 0.6081,
+      "f1_score": 0.5,
+      "roc_auc": 0.9469,
+      "pr_auc": 0.402,
+      "false_positive_rate": 0.0081,
+      "confusion_matrix": [
+        [
+          7439,
+          61
+        ],
+        [
+          29,
+          45
+        ]
+      ],
+      "role": "Primary Anomaly Detection Engine (Unsupervised)"
+    },
+    "LocalOutlierFactor": {
+      "model_type": "Density-Based Anomaly Detector (Unsupervised)",
+      "training_time_sec": 0.73,
+      "precision": 0.3944,
+      "recall": 0.7568,
+      "f1_score": 0.5185,
+      "roc_auc": 0.9181,
+      "pr_auc": 0.6462,
+      "false_positive_rate": 0.0115,
+      "confusion_matrix": [
+        [
+          7414,
+          86
+        ],
+        [
+          18,
+          56
+        ]
+      ],
+      "role": "Alternative Unsupervised Anomaly Benchmark"
+    },
+    "RandomForest": {
+      "model_type": "Supervised Balanced Random Forest",
+      "training_time_sec": 1.31,
+      "precision": 0.9531,
+      "recall": 0.8243,
+      "f1_score": 0.8841,
+      "roc_auc": 0.9734,
+      "pr_auc": 0.9026,
+      "false_positive_rate": 0.0004,
+      "confusion_matrix": [
+        [
+          7497,
+          3
+        ],
+        [
+          13,
+          61
+        ]
+      ],
+      "role": "Supervised Benchmark Classifier"
+    },
+    "XGBoost": {
+      "model_type": "Supervised Gradient Boosted Decision Trees",
+      "training_time_sec": 1.77,
+      "precision": 0.9231,
+      "recall": 0.8108,
+      "f1_score": 0.8633,
+      "roc_auc": 0.9759,
+      "pr_auc": 0.8992,
+      "false_positive_rate": 0.0007,
+      "confusion_matrix": [
+        [
+          7495,
+          5
+        ],
+        [
+          14,
+          60
+        ]
+      ],
+      "role": "Advanced Supervised Comparison"
+    }
+  }
+}

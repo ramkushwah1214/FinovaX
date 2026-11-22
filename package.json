@@ -1,0 +1,27 @@
+{
+  "name": "finovax-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FinovaX — AI-Powered Personal Finance & Fraud Intelligence Platform",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:ai": "cd ai-service && .\\venv\\Scripts\\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "test:backend": "npm --prefix backend test",
+    "test:ai": "cd ai-service && .\\venv\\Scripts\\python.exe -m unittest test_ai_service.py"
+  },
+  "keywords": [
+    "fintech",
+    "finance",
+    "fraud-detection",
+    "ai",
+    "react",
+    "express",
+    "fastapi"
+  ],
+  "author": "",
+  "license": "MIT"
+}

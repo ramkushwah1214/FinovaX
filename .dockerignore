@@ -1,0 +1,50 @@
+# FinovaX Global Docker Ignore
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.idea
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and build outputs
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+
+# Python virtual environment and bytecode
+venv
+**/venv
+.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Raw ML benchmark training datasets (~644 MB, inference only required in container)
+ai-service/data/raw
+ai-service/data/processed
+**/data/raw
+**/data/processed
+
+# Logs and test artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pytest_cache
+**/coverage
+
+# Temporary scripts and OS files
+.DS_Store
+Thumbs.db
+run-all.bat
+run-all.ps1
+
